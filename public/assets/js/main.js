@@ -76,7 +76,31 @@ document.addEventListener("input", function (e) {
     }
 });
 
+$(document).ready(function () {
+    $(".select2-no-search").select2({
+        minimumResultsForSearch: Infinity,
+    });
+
+    $(document).on("change", ".product-select", function () {
+        let $row = $(this).closest(".invoice-item");
+        let selected = $(this).find("option:selected");
+        let price = selected.data("price") || 0;
+        let name = selected.data("name") || "";
+
+        $row.find(".unit-price").val(price);
+        $row.find(".product-name-hidden").val(name);
+    });
+});
+
 //** Add item
+
+function generateProductOptions() {
+    let options = `<option value="">${placeholders.getAttribute("data-select")}</option>`;
+    window.products.forEach((product) => {
+        options += `<option value="${product.id}" data-name="${product.name}" data-price="${product.price}">${product.name}</option>`;
+    });
+    return options;
+}
 
 document.getElementById("add-item").addEventListener("click", function () {
     const container = document.getElementById("items-container");
@@ -86,36 +110,37 @@ document.getElementById("add-item").addEventListener("click", function () {
     row.className = "row g-3 invoice-item mb-3";
     row.innerHTML = `
         <div class="col-md-4">
-            <input type="text" name="items[${
+            <select name="items[${
                 window.itemIndex
-            }][product_name]" class="form-control form-control-sm"
-                placeholder="${placeholders.getAttribute(
-                    "data-product-name"
-                )}" required>
+            }][product_id]" class="form-control form-control-sm select2-no-search product-select" data-index="0">
+                ${generateProductOptions()}
+            </select>
+            <input type="hidden" name="items[${
+                window.itemIndex
+            }][product_name]" class="product-name-hidden" placeholder="${placeholders.getAttribute(
+        "data-product-name"
+    )}">
         </div>
         <div class="col-md-2">
             <input type="number" step="0.01" name="items[${
                 window.itemIndex
-            }][unit_price]"
-                class="form-control form-control-sm unit-price" placeholder="${placeholders.getAttribute(
-                    "data-unit-price"
-                )}" required>
+            }][unit_price]" class="form-control form-control-sm unit-price" placeholder="${placeholders.getAttribute(
+        "data-unit-price"
+    )}" required>
         </div>
         <div class="col-md-2">
             <input type="number" name="items[${
                 window.itemIndex
-            }][quantity]" min="1" max="10"
-                class="form-control form-control-sm quantity" placeholder="${placeholders.getAttribute(
-                    "data-quantity"
-                )}" required>
+            }][quantity]" min="1" max="10" class="form-control form-control-sm quantity" placeholder="${placeholders.getAttribute(
+        "data-quantity"
+    )}" required>
         </div>
         <div class="col-md-2">
             <input type="number" name="items[${
                 window.itemIndex
-            }][sub_total]" class="form-control form-control-sm total"
-                placeholder="${placeholders.getAttribute(
-                    "data-subtotal"
-                )}" readonly>
+            }][sub_total]" class="form-control form-control-sm total" placeholder="${placeholders.getAttribute(
+        "data-subtotal"
+    )}" readonly>
         </div>
         <div class="col-md-2 d-grid align-items-end">
             <button type="button" class="btn btn-sm btn-danger remove-item"><i class="bi bi-trash3"></i> ${placeholders.getAttribute(
@@ -123,8 +148,13 @@ document.getElementById("add-item").addEventListener("click", function () {
             )}</button>
         </div>
     `;
+
     container.appendChild(row);
     window.itemIndex++;
+
+    $(row).find(".select2-no-search").select2({
+        minimumResultsForSearch: Infinity,
+    });
 });
 
 //!! Remove item
@@ -154,3 +184,39 @@ document.addEventListener("click", function (e) {
 document.getElementById("paid_at").value = new Date()
     .toISOString()
     .split("T")[0];
+
+let productIndex = 1;
+
+document.getElementById("add-product").addEventListener("click", function () {
+    const container = document.getElementById("product-container");
+    const placeholders = document.getElementById("placeholders");
+
+    const product = document.createElement("div");
+    product.className = "row g-3 product-item mb-3";
+
+    product.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" name="products[${productIndex}][product_name]" class="form-control form-control-sm"
+                placeholder="${placeholders.getAttribute(
+                    "data-product-name"
+                )}" required>
+        </div>
+        <div class="col-md-5">
+            <input type="number" step="0.01" name="products[${productIndex}][unit_price]"
+                class="form-control form-control-sm unit-price"
+                placeholder="${placeholders.getAttribute(
+                    "data-unit-price"
+                )}" required>
+        </div>
+        <div class="col-md-2 d-grid align-items-end">
+            <button type="button" class="btn btn-sm btn-danger remove-product">
+                <i class="bi bi-trash3"></i> ${placeholders.getAttribute(
+                    "data-remove-btn"
+                )}
+            </button>
+        </div>
+    `;
+
+    container.appendChild(product);
+    productIndex++;
+});

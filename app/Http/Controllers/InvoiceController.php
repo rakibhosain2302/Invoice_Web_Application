@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
+use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -48,9 +49,10 @@ class InvoiceController extends Controller
      * Show the form for creating a new resource.
      */
     public function create()
-    {
-        return view('invoice.create');
-    }
+{
+    $products = Product::select('id', 'name', 'price')->get();
+    return view('invoice.create', compact('products'));
+}
 
     /**
      * Store a newly created resource in storage.
@@ -64,6 +66,7 @@ class InvoiceController extends Controller
             'note' => 'nullable|string',
             'total_amount' => 'required|numeric|min:0',
             'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.product_name' => 'required|string|max:255',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.quantity' => 'required|integer|min:1',
@@ -74,7 +77,6 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-
             $invoice = Invoice::create([
                 'buyer_name' => $validated['buyer_name'],
                 'buyer_mobile' => $validated['buyer_mobile'],
@@ -86,13 +88,15 @@ class InvoiceController extends Controller
                 $sub_total = $item['unit_price'] * $item['quantity'];
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
-                    'product_name' => $item['product_name'],
+                    'product_id' => $item['product_id'],      
+                    'product_name' => $item['product_name'],    
                     'unit_price' => $item['unit_price'],
                     'quantity' => $item['quantity'],
                     'sub_total' => $sub_total,
                 ]);
             }
 
+            // Step 3: Save Payment
             InvoicePayment::create([
                 'invoice_id' => $invoice->id,
                 'amount_paid' => $validated['amount_paid'],
@@ -266,6 +270,7 @@ class InvoiceController extends Controller
         session(['locale' => $locale]);
         return redirect()->back();
     }
+    
 }
 
 

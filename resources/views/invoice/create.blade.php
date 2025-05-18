@@ -65,20 +65,29 @@
                             class="bi bi-question-circle-fill text-active-gray-100"></i>
                     </h6>
                     <hr>
-                    <div id="placeholders" data-product-name="{{ __(key: 'Product Name') }}"
+                    <div id="placeholders" data-select="{{__('-- Select Product --')}}" data-product-name="{{ __(key: 'Product Name') }}"
                         data-unit-price="{{ __(key: 'Unit Price') }}" data-quantity="{{ __(key: 'Quantity') }}"
                         data-subtotal="{{ __(key: 'Subtotal') }}" data-remove-btn="{{ __(key: 'Remove') }}">
                     </div>
                     <div id="items-container">
                         <div class="row g-3 invoice-item mb-1">
                             <div class="col-md-4">
-                                <input type="text" name="items[0][product_name]" class="form-control form-control-sm"
-                                    placeholder="{{ __(key: 'Product Name') }}" required>
+                                <select name="items[0][product_id]"
+                                    class="form-control form-control-sm select2-no-search product-select" data-index="0">
+                                    <option value="">{{__('-- Select Product --')}}</option>
+                                    @foreach ($products as $product)
+                                        <option value="{{ $product->id }}" data-name="{{ $product->name }}"
+                                            data-price="{{ $product->price }}">
+                                            {{ $product->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="items[0][product_name]" class="product-name-hidden">
                             </div>
                             <div class="col-md-2">
                                 <input type="number" step="0.01" name="items[0][unit_price]"
-                                    class="form-control form-control-sm unit-price"
-                                    placeholder="{{ __(key: 'Unit Price') }}" required>
+                                    class="form-control form-control-sm unit-price" placeholder="{{ __('Unit Price') }}"
+                                    readonly required>
                             </div>
                             <div class="col-md-2">
                                 <input type="number" name="items[0][quantity]" min="1" max="10"
@@ -114,7 +123,8 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">{{ __('Initial Payment Amount') }}</label>
-                            <input type="number" id="paid-amount" name="amount_paid" class="form-control form-control-sm">
+                            <input type="number" id="paid-amount" name="amount_paid"
+                                class="form-control form-control-sm">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">{{ __('Due Amount') }}</label>
@@ -132,9 +142,15 @@
         </div>
     </div>
 
+    <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ asset('assets/js/select2.min.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
-    @include('isotope::elements.footer')
+    <script>
+        window.products = @json($products);
+        window.itemIndex = 1;
+    </script>
     @push('css')
+        <style src="{{ asset('assets/css/select2.min.css') }}"></style>
         <style>
             .card-header {
                 min-height: 0px !important;

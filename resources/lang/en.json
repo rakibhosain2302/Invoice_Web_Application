@@ -44,5 +44,12 @@
     "Search": "Search",
     "Search invoices...": "Search invoices...",
     "InvoiceId": "InvoiceNo",
-    "Due Colletion":"Due Colletion"
+    "Due Colletion":"Due Colletion",
+    "Add Products": "Add Products",
+    "Product Create": "Product Create",
+    "Product List": "Product List",
+    "Save": "Save",
+    "Add Product": "Add Product",
+    "Update": "Update",
+    "-- Select Product --": "-- Select Product --"
 }

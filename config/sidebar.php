@@ -39,10 +39,26 @@ return [
         ],
         [
             'sl' => 7,
+            'header' => 'Product',
+        ],
+         [
+            'sl' => 8,
+            'title' => 'Create',
+            'icon' => 'bi bi-file-earmark-plus',
+            'route' => 'products.create',
+        ],
+         [
+            'sl' => 9,
+            'title' => 'Product List',
+            'icon' => 'fa-solid fa-list-ol',
+            'route' => 'products.index',
+        ],
+        [
+            'sl' => 10,
             'header' => 'Setttings'
         ],
         [
-            'sl' => 8,
+            'sl' => 11,
             'title' => "General Setting",
             'icon' => 'bi bi-gear',
             'url' => '/settings'

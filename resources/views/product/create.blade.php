@@ -57,38 +57,38 @@
         <script>
             let productIndex = 1;
 
-            document.getElementById("add-product").addEventListener("click", function() {
-                const container = document.getElementById("product-container");
-                const placeholders = document.getElementById("placeholders");
+            $("#add-product").on("click", function() {
+                const $container = $("#product-container");
+                const $placeholders = $("#placeholders");
 
-                const product = document.createElement("div");
-                product.className = "row g-3 product-item mb-3";
+                const $product = $(`
+            <div class="row g-3 product-item mb-3">
+                <div class="col-md-5">
+                    <input type="text" name="products[${productIndex}][product_name]" class="form-control form-control-sm" placeholder="${$placeholders.data(
+            "product-name"
+        )}" required>
+                </div>
+                <div class="col-md-5">
+                    <input type="number" step="0.01" name="products[${productIndex}][unit_price]" class="form-control form-control-sm unit-price" placeholder="${$placeholders.data(
+            "unit-price"
+        )}" required>
+                </div>
+                <div class="col-md-2 d-grid align-items-end">
+                    <button type="button" class="btn btn-sm btn-danger remove-product">
+                        <i class="bi bi-trash3"></i> ${$placeholders.data(
+                            "remove-btn"
+                        )}
+                    </button>
+                </div>
+            </div>
+        `);
 
-                product.innerHTML = `
-                                        <div class="col-md-5">
-                                            <input type="text" name="products[${productIndex}][name]" class="form-control form-control-sm"
-                                                placeholder="${placeholders.getAttribute("data-product-name")}" required>
-                                        </div>
-                                        <div class="col-md-5">
-                                            <input type="number" step="0.01" name="products[${productIndex}][price]"
-                                                class="form-control form-control-sm unit-price"
-                                                placeholder="${placeholders.getAttribute("data-unit-price")}" required>
-                                        </div>
-                                        <div class="col-md-2 d-grid align-items-end">
-                                            <button type="button" class="btn btn-sm btn-danger remove-product">
-                                                <i class="bi bi-trash3"></i> ${placeholders.getAttribute("data-remove-btn")}
-                                            </button>
-                                        </div>
-                                    `;
-
-                container.appendChild(product);
+                $container.append($product);
                 productIndex++;
             });
 
-            document.addEventListener("click", function(e) {
-                if (e.target.classList.contains("remove-product") || e.target.closest(".remove-product")) {
-                    e.target.closest(".product-item").remove();
-                }
+            $(document).on("click", ".remove-product", function() {
+                $(this).closest(".product-item").remove();
             });
         </script>
     @endpush

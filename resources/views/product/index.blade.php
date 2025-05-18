@@ -12,8 +12,8 @@
 @section('content')
     <div class="card">
         <div class="card-body pt-3">
-            {{-- <div class="mb-3 d-flex justify-content-start">
-                <form id="search-form" action="{{ route('invoices.index') }}" method="GET" class="w-100 w-md-auto">
+            <div class="mb-3 d-flex justify-content-start">
+                <form id="search-form" action="{{ route('products.index') }}" method="GET" class="w-100 w-md-auto">
                     <div class="row gx-2 gy-2 align-items-end flex-wrap">
                         <div class="col-md-3">
                             <label class="form-label">{{ __(key: 'Product Name') }}</label>
@@ -42,7 +42,7 @@
                         </div>
                     </div>
                 </form>
-            </div> --}}
+            </div>
             <div class="table-responsive">
                 <table class="table table-bordered rounded table-striped align-middle">
                     <thead class="text-light" style="background-color: #0E475D">
@@ -79,7 +79,7 @@
                         @endforeach
                     </tbody>
                 </table>
-                {{-- {{ $invoices->appends(request()->query())->links('pagination::bootstrap-5') }} --}}
+                {{ $products->appends(request()->query())->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>

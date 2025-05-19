@@ -35,7 +35,7 @@
                             <input type="date" name="end_date" class="form-control form-control-sm"
                                 value="{{ request('end_date') }}">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 text-md-start text-end">
                             <label class="form-label d-none d-md-block">&nbsp;</label>
                             <button class="btn btn-sm btn-isotope fw-bold me-2"
                                 type="submit">{{ __(key: 'Search') }}</button>

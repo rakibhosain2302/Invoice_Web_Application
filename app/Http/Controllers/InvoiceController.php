@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
-use App\Models\Product;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,41 +17,41 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Invoice::with(['items', 'payment']);
-
-        if ($request->filled('buyer_name')) {
-            $query->where('buyer_name', 'like', '%' . $request->buyer_name . '%');
-        }
-
-        if ($request->filled('buyer_mobile')) {
-            $query->where('buyer_mobile', 'like', '%' . $request->buyer_mobile . '%');
-        }
-
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('created_at', [
-                $request->start_date . ' 00:00:00',
-                $request->end_date . ' 23:59:59',
-            ]);
-        } elseif ($request->filled('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
-        } elseif ($request->filled('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
-        }
-
-        $invoices = $query->latest()->paginate(7);
+        $invoices = Invoice::with(['items', 'payment'])
+            ->when($request->filled('buyer_name'), function ($q) use ($request) {
+                $q->where('buyer_name', 'like', '%' . $request->buyer_name . '%');
+            })
+            ->when($request->filled('buyer_mobile'), function ($q) use ($request) {
+                $q->where('buyer_mobile', 'like', '%' . $request->buyer_mobile . '%');
+            })
+            ->when($request->filled('start_date') && $request->filled('end_date'), function ($q) use ($request) {
+                $q->whereBetween('created_at', [
+                    $request->start_date . ' 00:00:00',
+                    $request->end_date . ' 23:59:59'
+                ]);
+            })
+            ->when($request->filled('start_date') && !$request->filled('end_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->start_date);
+            })
+            ->when($request->filled('end_date') && !$request->filled('start_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->end_date);
+            })
+            ->latest()
+            ->paginate(7)
+            ->appends($request->all());
 
         return view('invoice.index', compact('invoices'));
     }
+
 
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
-{
-    $products = Product::select('id', 'name', 'price')->get();
-    return view('invoice.create', compact('products'));
-}
+    {
+        return view('invoice.create');
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -88,8 +87,8 @@ class InvoiceController extends Controller
                 $sub_total = $item['unit_price'] * $item['quantity'];
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
-                    'product_id' => $item['product_id'],      
-                    'product_name' => $item['product_name'],    
+                    'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
                     'unit_price' => $item['unit_price'],
                     'quantity' => $item['quantity'],
                     'sub_total' => $sub_total,
@@ -150,92 +149,105 @@ class InvoiceController extends Controller
      * Update the specified resource in storage.
      */
 
-
     public function update(Request $request, string $id)
     {
-        $request->validate([
-            'buyer_name' => 'required|string|max:255',
-            'buyer_mobile' => 'required|string|max:20',
+        $isDueCollection = $request->filled('amount_paid') && !$request->has('items');
+
+        $rules = [
+            'buyer_name' => 'nullable|string|max:255',
+            'buyer_mobile' => 'nullable|string|max:20',
             'note' => 'nullable|string|max:255',
-            'items' => 'required|array|min:1',
-            'items.*.product_name' => 'required|string|max:255',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.sub_total' => 'required|numeric|min:0',
             'total_amount' => 'required|numeric|min:0',
-            'amount_paid' => 'required|numeric|min:0',
-            'due_amount' => 'required|numeric|min:0',
-            'paid_at' => 'required|date',
-        ]);
+            'amount_paid' => 'nullable|numeric|min:0',
+            'due_amount' => 'nullable|numeric|min:0',
+            'paid_at' => 'nullable|date',
+        ];
+
+        // ✅ Items validation only if not due collection
+        if (!$isDueCollection) {
+            $rules['buyer_name'] = 'required|string|max:255';
+            $rules['buyer_mobile'] = 'required|string|max:20';
+            $rules['items'] = 'required|array|min:1';
+            $rules['items.*.product_id'] = 'required|integer|exists:products,id';
+            $rules['items.*.product_name'] = 'required|string|max:255';
+            $rules['items.*.unit_price'] = 'required|numeric|min:0';
+            $rules['items.*.quantity'] = 'required|integer|min:1';
+            $rules['items.*.sub_total'] = 'required|numeric|min:0';
+        }
+
+        $request->validate($rules);
 
         DB::beginTransaction();
 
         try {
             $invoice = Invoice::find($id);
-
-            if ($request->has('deleted_items')) {
-                InvoiceItem::where('invoice_id', $invoice->id)
-                    ->whereIn('id', $request->deleted_items)
-                    ->delete();
+            if (!$invoice) {
+                return back()->withErrors(['error' => 'Invoice not found.']);
             }
-            $invoice->update($request->only('buyer_name', 'buyer_mobile', 'note', 'total_amount'));
-            foreach ($request->items as $item) {
-                $product_name = trim($item['product_name']);
-                $unit_price = (float) $item['unit_price'];
-                $quantity = (int) $item['quantity'];
-                $sub_total = round($unit_price * $quantity, 2);
 
-                if (!empty($item['id'])) {
-                    $invoiceItem = InvoiceItem::where('invoice_id', $invoice->id)->find($item['id']);
-                    if ($invoiceItem) {
-                        if (
-                            $invoiceItem->product_name !== $product_name ||
-                            $invoiceItem->unit_price != $unit_price ||
-                            $invoiceItem->quantity != $quantity
-                        ) {
+            // Update invoice info
+            $invoice->update($request->only('buyer_name', 'buyer_mobile', 'note', 'total_amount'));
+
+            // ✅ Only handle items if present (i.e., not due collection)
+            if (!$isDueCollection && $request->has('items')) {
+
+                if ($request->has('deleted_items')) {
+                    InvoiceItem::where('invoice_id', $invoice->id)
+                        ->whereIn('id', $request->deleted_items)
+                        ->delete();
+                }
+
+                foreach ($request->items as $item) {
+                    $productName = trim($item['product_name']);
+                    $unitPrice = (float) $item['unit_price'];
+                    $quantity = (int) $item['quantity'];
+                    $subTotal = round($unitPrice * $quantity, 2);
+
+                    if (!empty($item['id'])) {
+                        $invoiceItem = InvoiceItem::where('invoice_id', $invoice->id)->find($item['id']);
+                        if ($invoiceItem) {
                             $invoiceItem->update([
-                                'product_name' => $product_name,
-                                'unit_price' => $unit_price,
+                                'product_name' => $productName,
+                                'unit_price' => $unitPrice,
                                 'quantity' => $quantity,
-                                'sub_total' => $sub_total,
+                                'sub_total' => $subTotal,
                             ]);
                         }
-                    }
-                } else {
-                    if ($product_name !== '' && $unit_price > 0 && $quantity > 0) {
+                    } else {
                         $invoice->items()->create([
-                            'product_name' => $product_name,
-                            'unit_price' => $unit_price,
+                            'product_id' => $item['product_id'] ?? null,
+                            'product_name' => $productName,
+                            'unit_price' => $unitPrice,
                             'quantity' => $quantity,
-                            'sub_total' => $sub_total,
+                            'sub_total' => $subTotal,
                         ]);
+
                     }
                 }
             }
-            if ($request->has('payment_id')) {
-                $payment = InvoicePayment::find($request->payment_id);
 
-                if ($payment && $payment->invoice_id == $invoice->id) {
-                    $payment->update($request->only('amount_paid', 'due_amount', 'paid_at'));
-                } else {
-                    return back()->with('error', 'Invalid payment ID or invoice mismatch.');
-                }
-            } else {
+            if ($request->filled('amount_paid') && $request->amount_paid > 0) {
                 $invoice->payment()->create([
                     'amount_paid' => $request->amount_paid,
                     'due_amount' => $request->due_amount,
-                    'paid_at' => now(),
-
+                    'paid_at' => $request->paid_at ?? now(),
                 ]);
             }
 
             DB::commit();
-            return redirect()->route('invoices.index')->withSuccess('Invoice updated successfully.');
+
+            if ($request->filled('amount_paid') && $request->amount_paid > 0) {
+                return redirect()->route('invoices.index')->withSuccess('Due Payment Received Successfully.');
+            } else {
+                return redirect()->route('invoices.index')->withSuccess('Invoice Updated Successfully.');
+            }
+
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Something went wrong: ' . $e->getMessage()]);
         }
     }
+
 
 
 
@@ -255,22 +267,12 @@ class InvoiceController extends Controller
         return redirect()->back()->withSuccess('Invoice Delete successfully.');
     }
 
-    public function printLast()
-    {
-        $invoices = Invoice::with(['items', 'payment'])->latest()->first();
-        if (!$invoices) {
-            return redirect()->back()->withErrors('error', 'No invoice found!');
-        }
-        $pdf = Pdf::loadView('invoice.invoice_pdf', compact('invoices'));
-        return $pdf->stream("invoice_{$invoices->id}.pdf");
-    }
-
     public function change($locale = 'en')
     {
         session(['locale' => $locale]);
         return redirect()->back();
     }
-    
+
 }
 
 

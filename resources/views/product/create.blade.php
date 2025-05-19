@@ -52,7 +52,6 @@
             </form>
         </div>
     </div>
-    @include('isotope::elements.footer')
     @push('js')
         <script>
             let productIndex = 1;

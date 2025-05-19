@@ -125,12 +125,12 @@
                         <label class="form-label">{{ __('Total Amount') }}</label>
                         <input type="text" id="re-paygrand-total" name="total_amount"
                             value="{{ old('total_amount', $invoices->total_amount) }}"
-                            class="form-control form-control-sm bg-secondary">
+                            class="form-control form-control-sm bg-secondary" readonly>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ __('Due Colletion Amount') }}</label>
                         <input type="hidden" id="already-paid" value="{{ $invoices->payment->sum('amount_paid') }}">
-                        <input type="text" id="paid-amount" name="amount_paid" class="form-control form-control-sm">
+                        <input type="number" id="paid-amount" name="amount_paid" class="form-control form-control-sm">
                     </div>
 
                     <div class="col-md-6">
@@ -156,9 +156,7 @@
             </form>
         </div>
     </div>
-
     <script src="{{ asset('assets/js/main.js') }}"></script>
-    @include('isotope::elements.footer')
     @push('css')
         <style>
             label {

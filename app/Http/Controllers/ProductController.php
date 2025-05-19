@@ -12,24 +12,22 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::query();
-
-        if ($request->filled('name')) {
-            $query->where('name', 'like', '%' . $request->name . '%');
-        }
-
-        if ($request->filled('price')) {
-            $query->where('price', $request->price);
-        }
-
-        if ($request->filled('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
-        }
-        if ($request->filled('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
-        }
-
-        $products = $query->latest()->paginate(15)->appends($request->all());
+        $products = Product::query()
+            ->when($request->filled('name'), function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->name . '%');
+            })
+            ->when($request->filled('price'), function ($q) use ($request) {
+                $q->where('price', $request->price);
+            })
+            ->when($request->filled('start_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->start_date);
+            })
+            ->when($request->filled('end_date'), function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->end_date);
+            })
+            ->latest()
+            ->paginate(15)
+            ->appends($request->all()); // Preserve search in pagination
 
         return view('product.index', compact('products'));
     }
@@ -120,7 +118,27 @@ class ProductController extends Controller
         }
     }
 
+    public function search(Request $request)
+    {
+        $search = $request->search;
 
+        $products = Product::where('name', 'like', "%$search%")
+            ->select('id', 'name', 'price')
+            ->limit(10)
+            ->get();
+
+        $response = [];
+
+        foreach ($products as $product) {
+            $response[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+            ];
+        }
+
+        return response()->json($response);
+    }
 
 
 

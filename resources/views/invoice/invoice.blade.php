@@ -206,7 +206,6 @@
             </div>
         </div>
     </div>
-    @include('isotope::elements.footer')
     @push('css')
         <style>
             .w-color {

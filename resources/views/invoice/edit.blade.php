@@ -53,32 +53,35 @@
                     </h6>
                     <hr>
                     @foreach ($invoices->items as $index => $item)
-                        <div class="row g-3 invoice-item mb-1">
+                        <div class="row g-3 invoice-item mb-3">
                             <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
-
                             <div class="col-md-4">
-                                <input type="text" name="items[{{ $index }}][product_name]"
-                                    class="form-control form-control-sm"
-                                    value="{{ old("items.$index.product_name", $item->product_name) }}" required>
+                                <select class="form-control form-control-sm select2-product"
+                                    name="items[{{ $index }}][product_id]" id="product_id_{{ $index }}">
+                                    <option value="{{ $item->product_id }}" selected>
+                                        {{ $item->product_name }}
+                                    </option>
+                                </select>
+                                <input type="hidden" name="items[{{ $index }}][product_name]"
+                                    value="{{ $item->product_name }}" class="product-name-hidden"
+                                    id="product_name_{{ $index }}">
                             </div>
                             <div class="col-md-2">
-                                <input type="text" step="0.01" name="items[{{ $index }}][unit_price]"
-                                    class="form-control form-control-sm unit-price"
-                                    value="{{ old("items.$index.unit_price", $item->unit_price) }}" required>
+                                <input type="text" name="items[{{ $index }}][unit_price]"
+                                    value="{{ $item->unit_price }}" class="form-control form-control-sm unit-price"
+                                    readonly>
                             </div>
                             <div class="col-md-2">
-                                <input type="text" name="items[{{ $index }}][quantity]" min="1"
-                                    max="10" class="form-control form-control-sm quantity"
-                                    value="{{ old("items.$index.quantity", $item->quantity) }}" required>
+                                <input type="number" name="items[{{ $index }}][quantity]"
+                                    value="{{ $item->quantity }}" class="form-control form-control-sm quantity" required>
                             </div>
                             <div class="col-md-2">
-                                <input type="text" name="items[{{ $index }}][sub_total]"
-                                    class="form-control form-control-sm total"
-                                    value="{{ old("items.$index.sub_total", $item->sub_total) }}" readonly>
+                                <input type="number" name="items[{{ $index }}][sub_total]"
+                                    value="{{ $item->sub_total }}" class="form-control form-control-sm total" readonly>
                             </div>
                             <div class="col-md-2 d-grid align-items-end">
                                 <button type="button" class="btn btn-sm btn-danger remove-item">
-                                    <i class="bi bi-trash3"></i> {{ __(key: 'Remove') }}
+                                    <i class="bi bi-trash3"></i> Remove
                                 </button>
                             </div>
                         </div>
@@ -102,28 +105,34 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ __('Initial Payment Amount') }}</label>
-                        <input type="text" id="paid-amount" name="amount_paid"
+                        <input type="text" id="paid-amount"
                             value="{{ old('amount_paid', $invoices->payment->sum('amount_paid')) }}"
                             class="form-control form-control-sm bg-secondary" readonly>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ __('Due Amount') }}</label>
-                        <input type="text" id="due-amount" name="due_amount"
+                        <input type="text" id="due-amount"
                             class="form-control form-control-sm bg-secondary {{ $invoices->total_amount - ($invoices->payment->sum('amount_paid') ?? 0) > 0 ? 'text-danger' : 'text-success' }}"
                             value="{{ old('due_amount', $invoices->total_amount - ($invoices->payment->sum('amount_paid') ?? 0)) }}"
                             readonly>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ __('Payment') }} {{ __(key: 'Date') }}</label>
-                        <input type="date" name="paid_at" id="paid_at" class="form-control form-control-sm" formnovalidate>
+                        <input type="date" name="paid_at" class="form-control form-control-sm" id="paid_at">
                     </div>
                 </div>
             </form>
         </div>
     </div>
-
+    <script src="{{ asset('assets/js/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ asset('assets/js/select2.min.js') }}"></script>
+    <script>
+        window.getProductsUrl = "{{ url('/get-products') }}";
+        window.translations = {
+            productPlaceholder: "{{ __('Search for a product') }}"
+        };
+    </script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
-    @include('isotope::elements.footer')
     @push('css')
         <style>
             label {

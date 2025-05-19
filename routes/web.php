@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ProductController;
+use App\Models\Product;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -18,12 +20,8 @@ Route::get('/locale-change/{locale?}', [InvoiceController::class, 'change']);
 
 Route::resource('products', ProductController::class);
 
+Route::get('/get-products', [ProductController::class, 'search']);
 
-// Route::get('/products/getProducts', function () {
-//     return response()->json([
-//         ['id' => 1, 'text' => 'Test Product', 'unit_price' => 123]
-//     ]);
-// });
 
 
 

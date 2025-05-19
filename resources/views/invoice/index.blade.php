@@ -16,28 +16,28 @@
                 <form id="search-form" action="{{ route('invoices.index') }}" method="GET" class="w-100 w-md-auto">
                     <div class="row gx-2 gy-2 align-items-end flex-wrap">
                         <div class="col-md-3">
-                            <label class="form-label">{{__(key: 'Buyer Name')}}</label>
+                            <label class="form-label">{{ __(key: 'Buyer Name') }}</label>
                             <input type="text" name="buyer_name" class="form-control form-control-sm"
-                                placeholder="{{__(key: 'Buyer Name')}}" value="{{ request('buyer_name') }}">
+                                placeholder="{{ __(key: 'Buyer Name') }}" value="{{ request('buyer_name') }}">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">{{__(key: 'Mobile')}}</label>
+                            <label class="form-label">{{ __(key: 'Mobile') }}</label>
                             <input type="text" name="buyer_mobile" class="form-control form-control-sm"
-                                placeholder="{{__(key: 'Mobile')}}" value="{{ request('buyer_mobile') }}">
+                                placeholder="{{ __(key: 'Mobile') }}" value="{{ request('buyer_mobile') }}">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">{{__(key: 'Start Date')}}</label>
+                            <label class="form-label">{{ __(key: 'Start Date') }}</label>
                             <input type="date" name="start_date" class="form-control form-control-sm"
                                 value="{{ request('start_date') }}">
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">{{__(key: 'End Date')}}</label>
+                            <label class="form-label">{{ __(key: 'End Date') }}</label>
                             <input type="date" name="end_date" class="form-control form-control-sm"
                                 value="{{ request('end_date') }}">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-2 text-md-start text-end">
                             <label class="form-label d-none d-md-block">&nbsp;</label>
-                            <button class="btn btn-sm btn-isotope fw-bold me-2" type="submit">{{__(key: "Search")}}</button>
+                            <button class="btn btn-sm btn-isotope fw-bold me-2" type="submit">{{ __('Search') }}</button>
                         </div>
                     </div>
                 </form>
@@ -102,7 +102,7 @@
                         @endforeach
                     </tbody>
                 </table>
-                {{ $invoices->appends(request()->query())->links('pagination::bootstrap-5') }}
+                {{ $invoices->appends(request()->all())->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>
@@ -114,5 +114,4 @@
             }
         </style>
     @endpush
-    @include('isotope::elements.footer')
 @endsection
